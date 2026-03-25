@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Madeira Unveiled — Island Tours</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --ocean:#0a2a3d;--deep:#061820;--emerald:#2d6a4f;
+    --sage:#52b788;--gold:#c9a84c;--cream:#f5efe6;
+    --mist:#e8e0d5;--coral:#e07b54;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'DM Sans',sans-serif;background:var(--deep);color:var(--cream);overflow-x:hidden}
+
+  .config-banner{background:linear-gradient(90deg,#7f2d1e,#a03a22);color:#fff;padding:.8rem 2rem;font-size:.82rem;text-align:center;line-height:1.6;display:none}
+  .config-banner.on{display:block}
+  .config-banner strong,.config-banner a{color:#ffd89b}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.2rem 4rem;background:rgba(6,24,32,.9);backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,168,76,.2);transition:top .3s}
+  .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:300;letter-spacing:.15em;color:var(--gold);text-decoration:none}
+  .nav-links{display:flex;gap:2rem;list-style:none}
+  .nav-links a{font-size:.8rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:var(--gold)}
+  .nav-right{display:flex;align-items:center;gap:1.5rem}
+  .db-status{display:flex;align-items:center;gap:.5rem;font-size:.72rem;opacity:.8}
+  .db-dot{width:8px;height:8px;border-radius:50%;background:#555;transition:background .3s}
+  .db-dot.live{background:var(--sage);box-shadow:0 0 6px var(--sage)}
+  .db-dot.demo{background:var(--gold)}
+  .db-dot.err{background:var(--coral)}
+  .nav-cta{background:var(--gold);color:var(--deep);border:none;padding:.6rem 1.4rem;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .2s;text-decoration:none}
+  .nav-cta:hover{background:#e0bb6a}
+
+  .hero{height:100vh;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(45,106,79,.35) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(10,42,61,.8) 0%,transparent 50%),linear-gradient(160deg,#061820 0%,#0a2a3d 40%,#0d3d2a 70%,#061820 100%)}
+  .hero-noise{position:absolute;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px}
+  .hero-wave{position:absolute;bottom:0;left:0;right:0;height:120px;background:linear-gradient(to top,var(--deep) 0%,transparent 100%);z-index:2}
+  .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.15;pointer-events:none}
+  .orb-1{width:600px;height:600px;background:var(--sage);top:-100px;left:-100px;animation:drift 18s ease-in-out infinite}
+  .orb-2{width:400px;height:400px;background:var(--ocean);bottom:0;right:0;animation:drift 22s ease-in-out infinite reverse}
+  .orb-3{width:300px;height:300px;background:var(--gold);top:40%;left:60%;animation:drift 15s ease-in-out infinite 3s}
+  @keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+  .hero-content{position:relative;z-index:3;text-align:center;padding:0 2rem;max-width:900px;animation:fadeUp 1.2s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+  .hero-tag{display:inline-block;font-size:.7rem;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--sage);border:1px solid rgba(82,183,136,.4);padding:.4rem 1rem;margin-bottom:2rem;animation:fadeUp 1.2s ease .1s both}
+  .hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(3.5rem,8vw,7rem);font-weight:300;line-height:1;margin-bottom:1.5rem;animation:fadeUp 1.2s ease .2s both}
+  .hero h1 em{font-style:italic;color:var(--gold)}
+  .hero p{font-size:1.05rem;font-weight:300;line-height:1.8;color:rgba(245,239,230,.7);max-width:560px;margin:0 auto 2.5rem;animation:fadeUp 1.2s ease .35s both}
+  .hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;animation:fadeUp 1.2s ease .5s both}
+  .btn-p{background:var(--gold);color:var(--deep);padding:.9rem 2.2rem;font-weight:500;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border:none;cursor:pointer;transition:all .2s;display:inline-block}
+  .btn-p:hover{background:#e0bb6a;transform:translateY(-2px)}
+  .btn-o{border:1px solid rgba(245,239,230,.4);color:var(--cream);padding:.9rem 2.2rem;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:all .2s;display:inline-block;background:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .btn-o:hover{border-color:var(--gold);color:var(--gold)}
+  .scroll-hint{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:.5rem;animation:fadeUp 1s ease 1s both}
+  .scroll-hint span{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;opacity:.5}
+  .scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--gold),transparent);animation:sa 2s ease-in-out infinite}
+  @keyframes sa{0%,100%{transform:scaleY(1);opacity:1}50%{transform:scaleY(.5);opacity:.4}}
+
+  section{padding:8rem 4rem}
+  .stag{font-size:.68rem;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--sage);margin-bottom:1rem}
+  .stitle{font-family:'Cormorant Garamond',serif;font-size:clamp(2.2rem,4vw,3.5rem);font-weight:300;line-height:1.15;margin-bottom:1.5rem}
+  .stitle em{font-style:italic;color:var(--gold)}
+
+  .about{background:var(--ocean)}
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;max-width:1200px;margin:0 auto}
+  .about-text p{font-size:1.05rem;line-height:1.9;color:rgba(245,239,230,.75);margin-bottom:1.2rem}
+  .about-stats{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem}
+  .stat{border-left:2px solid var(--gold);padding-left:1.2rem}
+  .stat-num{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:300;color:var(--gold);line-height:1}
+  .stat-lbl{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-top:.3rem}
+  .about-vis{position:relative;height:500px;background:linear-gradient(135deg,rgba(45,106,79,.3),rgba(82,183,136,.15));border:1px solid rgba(201,168,76,.2);overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .avc{width:80%;height:80%;background:linear-gradient(160deg,rgba(10,42,61,.8),rgba(45,106,79,.4));border:1px solid rgba(82,183,136,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem}
+  .avc h3{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:.5rem}
+  .avc p{font-size:.85rem;opacity:.6}
+
+  .tours{background:var(--deep)}
+  .tours-hd{text-align:center;max-width:700px;margin:0 auto 5rem}
+  .tours-hd p{font-size:1rem;line-height:1.8;opacity:.7}
+  .tours-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;max-width:1200px;margin:0 auto}
+  .tc{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:2.5rem;position:relative;overflow:hidden;transition:all .3s;cursor:pointer}
+  .tc:hover{border-color:rgba(201,168,76,.4);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .tacc{width:40px;height:2px;background:var(--gold);margin-bottom:2rem}
+  .tc.mor .tacc{background:#f4a261}
+  .tc.aft .tacc{background:var(--sage)}
+  .tbadge{display:inline-block;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;padding:.3rem .8rem;margin-bottom:1.5rem}
+  .mor .tbadge{background:rgba(244,162,97,.15);color:#f4a261;border:1px solid rgba(244,162,97,.3)}
+  .aft .tbadge{background:rgba(82,183,136,.15);color:var(--sage);border:1px solid rgba(82,183,136,.3)}
+  .fud .tbadge{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3)}
+  .tc h3{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:300;margin-bottom:.5rem}
+  .ttime{font-size:.8rem;opacity:.5;letter-spacing:.05em;margin-bottom:1.5rem}
+  .tc p{font-size:.9rem;line-height:1.8;opacity:.7;margin-bottom:2rem}
+  .tfeats{list-style:none;margin-bottom:2rem;display:flex;flex-direction:column;gap:.6rem}
+  .tfeats li{font-size:.82rem;opacity:.65;display:flex;align-items:center;gap:.6rem}
+  .tfeats li::before{content:'→';color:var(--gold);font-size:.75rem}
+  .tprice{display:flex;align-items:baseline;gap:.5rem;margin-bottom:1.5rem}
+  .pnum{font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:300;color:var(--gold)}
+  .punit{font-size:.78rem;opacity:.5}
+  .tbtn{width:100%;padding:.85rem;text-align:center;font-size:.78rem;letter-spacing:.15em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:all .2s;border:none;font-family:'DM Sans',sans-serif}
+  .mor .tbtn{background:rgba(244,162,97,.15);color:#f4a261;border:1px solid rgba(244,162,97,.4)}
+  .mor .tbtn:hover{background:#f4a261;color:var(--deep)}
+  .aft .tbtn{background:rgba(82,183,136,.15);color:var(--sage);border:1px solid rgba(82,183,136,.4)}
+  .aft .tbtn:hover{background:var(--sage);color:var(--deep)}
+  .fud .tbtn{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.4)}
+  .fud .tbtn:hover{background:var(--gold);color:var(--deep)}
+
+  .booking{background:var(--ocean)}
+  .bk-wrap{max-width:1100px;margin:0 auto}
+  .bk-hd{text-align:center;margin-bottom:4rem}
+  .bk-lay{display:grid;grid-template-columns:1fr 1.2fr;gap:4rem;align-items:start}
+  .cal-label{font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;opacity:.5;margin-bottom:1.5rem}
+  .cal{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);padding:2rem}
+  .cal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+  .cal-mon{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:300}
+  .cal-nav{background:none;border:1px solid rgba(255,255,255,.2);color:var(--cream);width:34px;height:34px;cursor:pointer;font-size:1rem;transition:all .2s}
+  .cal-nav:hover{border-color:var(--gold);color:var(--gold)}
+  .cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cdn{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;opacity:.4;text-align:center;padding:.4rem 0}
+  .cd{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.82rem;cursor:pointer;border:1px solid transparent;transition:all .15s;position:relative}
+  .cd:hover:not(.emp):not(.past){border-color:rgba(201,168,76,.5);color:var(--gold)}
+  .cd.today{border-color:rgba(82,183,136,.5);color:var(--sage)}
+  .cd.sel{background:var(--gold);color:var(--deep);font-weight:500;border-color:var(--gold)}
+  .cd.emp,.cd.past{opacity:.25;cursor:not-allowed}
+  .cd .dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--coral)}
+  .legend{display:flex;gap:1.5rem;margin-top:1rem;flex-wrap:wrap}
+  .li{display:flex;align-items:center;gap:.4rem;font-size:.72rem;opacity:.6}
+  .ld{width:8px;height:8px;border-radius:50%}
+  .gcal-box{margin-top:2rem;padding:1.2rem;background:rgba(82,183,136,.08);border:1px solid rgba(82,183,136,.2)}
+  .gcal-box .gt{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--sage);margin-bottom:.5rem}
+  .gcal-box p{font-size:.82rem;opacity:.7;line-height:1.6}
+
+  .fw{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:2.5rem}
+  .ftitle{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:2rem}
+  .fg{margin-bottom:1.5rem}
+  .fl{display:block;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;opacity:.6;margin-bottom:.6rem}
+  .fi,.fs{width:100%;padding:.8rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--cream);font-family:'DM Sans',sans-serif;font-size:.9rem;transition:border-color .2s;outline:none}
+  .fi:focus,.fs:focus{border-color:var(--gold)}
+  .fs option{background:var(--ocean)}
+  .fr{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .fdd{padding:.8rem 1rem;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);font-size:.9rem;color:var(--gold);min-height:42px}
+  .fsub{width:100%;padding:1rem;margin-top:.5rem;background:var(--gold);color:var(--deep);border:none;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+  .fsub:hover{background:#e0bb6a}
+  .fsub:disabled{opacity:.5;cursor:not-allowed}
+
+  .db-sec{background:var(--deep)}
+  .db-wrap{max-width:1200px;margin:0 auto}
+  .db-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2.5rem;flex-wrap:wrap;gap:1rem}
+  .db-ctrl{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center}
+  .dbf{padding:.4rem 1rem;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--cream);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .dbf.on,.dbf:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08)}
+  .dbs{padding:.5rem 1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--cream);font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;min-width:220px}
+  .dbs:focus{border-color:var(--gold)}
+  .twrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse}
+  thead th{font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;opacity:.5;padding:1rem;text-align:left;border-bottom:1px solid rgba(255,255,255,.1)}
+  tbody tr{border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s}
+  tbody tr:hover{background:rgba(255,255,255,.03)}
+  tbody td{padding:1rem;font-size:.88rem}
+  .badge{display:inline-block;padding:.25rem .7rem;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;border-radius:2px}
+  .bm{background:rgba(244,162,97,.15);color:#f4a261}
+  .ba{background:rgba(82,183,136,.15);color:var(--sage)}
+  .bf{background:rgba(201,168,76,.15);color:var(--gold)}
+  .bc{background:rgba(82,183,136,.15);color:var(--sage)}
+  .bp{background:rgba(201,168,76,.15);color:var(--gold)}
+  .bx{background:rgba(224,123,84,.15);color:var(--coral)}
+  .empty-row td{text-align:center;opacity:.4;padding:3rem}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite;vertical-align:middle;margin-right:.4rem}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  .toast{position:fixed;bottom:2rem;right:2rem;z-index:999;color:#fff;padding:1rem 1.5rem;border-left:4px solid var(--sage);font-size:.88rem;transform:translateX(120%);transition:transform .4s;max-width:340px}
+  .toast.on{transform:translateX(0)}
+  .tt{font-weight:500;margin-bottom:.2rem}
+  .tm{opacity:.8;font-size:.82rem}
+
+  footer{background:rgba(6,24,32,.95);border-top:1px solid rgba(255,255,255,.08);padding:3rem 4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:2rem}
+  .fb{font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--gold);font-weight:300;letter-spacing:.1em}
+  .fi2{font-size:.8rem;opacity:.4;line-height:1.8}
+  .soc{display:flex;gap:1rem}
+  .sb{width:38px;height:38px;border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;transition:all .2s;text-decoration:none;color:var(--cream)}
+  .sb:hover{border-color:var(--gold);color:var(--gold)}
+
+  @media(max-width:900px){
+    nav{padding:1rem 1.5rem}
+    .nav-links{display:none}
+    section{padding:5rem 1.5rem}
+    .about-grid,.tours-grid,.bk-lay{grid-template-columns:1fr;gap:2.5rem}
+    .about-vis{height:280px}
+    footer{flex-direction:column;padding:2rem 1.5rem}
+    .fr{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="config-banner" id="cbanner">
+  ⚙️ <strong>Setup needed:</strong> Open index.html and replace <strong>YOUR_SUPABASE_URL</strong> and <strong>YOUR_SUPABASE_ANON_KEY</strong> with your free Supabase credentials.
+  <a href="https://supabase.com" target="_blank"> Get them free at supabase.com →</a>
+  &nbsp;(Running in demo mode with local storage for now)
+</div>
+
+<nav id="mainnav">
+  <a href="#" class="nav-logo">MADEIRA UNVEILED</a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#tours">Tours</a></li>
+    <li><a href="#booking">Book</a></li>
+    <li><a href="#dbsec">Reservations</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="db-status"><div class="db-dot" id="dbdot"></div><span id="dbstxt">Connecting…</span></div>
+    <a href="#booking" class="nav-cta">Book a Tour</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div><div class="hero-noise"></div>
+  <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+  <div class="hero-content">
+    <div class="hero-tag">🌿 Madeira Island, Portugal</div>
+    <h1>Where the<br><em>Atlantic</em> meets<br>the Mountains</h1>
+    <p>Discover Madeira's dramatic landscapes, lush levada trails, and timeless fishing villages through handcrafted guided tours.</p>
+    <div class="hero-btns">
+      <a href="#tours" class="btn-p">Explore Tours</a>
+      <a href="#about" class="btn-o">Our Story</a>
+    </div>
+  </div>
+  <div class="hero-wave"></div>
+  <div class="scroll-hint"><span>Scroll</span><div class="scroll-line"></div></div>
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="about-grid">
+    <div class="about-text">
+      <div class="stag">About Madeira</div>
+      <h2 class="stitle">The <em>Pearl</em> of the Atlantic</h2>
+      <p>Rising dramatically from the Atlantic Ocean, Madeira is a year-round destination of extraordinary beauty — a volcanic island blanketed in laurisilva forest, carved by ancient levadas, and fringed by cliffs that plunge into the deep blue sea.</p>
+      <p>Our local guides take you off the beaten path to hidden viewpoints, traditional quintas, and secret villages that most visitors never find. Small groups, personal attention, authentic experiences.</p>
+      <div class="about-stats">
+        <div class="stat"><div class="stat-num">1.862m</div><div class="stat-lbl">Highest Peak</div></div>
+        <div class="stat"><div class="stat-num">300+</div><div class="stat-lbl">Days of Sun / Year</div></div>
+        <div class="stat"><div class="stat-num">2.400km</div><div class="stat-lbl">Levada Trails</div></div>
+        <div class="stat"><div class="stat-num">8</div><div class="stat-lbl">Tour Years</div></div>
+      </div>
+    </div>
+    <div class="about-vis">
+      <div class="avc">
+        <div style="font-size:5rem;margin-bottom:1rem">🏔️</div>
+        <h3>Madeira Island</h3>
+        <p>Funchal, Portugal · 32°N 16°W</p><br>
+        <p style="font-size:.8rem;opacity:.5;line-height:1.7">Volcanic island · UNESCO World Heritage<br>Subtropical climate · Year-round destination</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOURS -->
+<section class="tours" id="tours">
+  <div class="tours-hd">
+    <div class="stag">Our Experiences</div>
+    <h2 class="stitle">Choose Your <em>Journey</em></h2>
+    <p>Three ways to experience Madeira — from a sunrise coastal walk to a full-day exploration of the island's most breathtaking corners.</p>
+  </div>
+  <div class="tours-grid">
+    <div class="tc mor" onclick="pickTour('Morning Tour')">
+      <div class="tacc"></div><div class="tbadge">☀️ Morning</div>
+      <h3>Dawn Explorer</h3><div class="ttime">07:30 — 12:30 · 5 hours</div>
+      <p>Start your day with misty levadas and panoramic Atlantic vistas as the island awakens in golden morning light.</p>
+      <ul class="tfeats"><li>Levada do Rei forest walk</li><li>Sunrise at Pico do Arieiro</li><li>Traditional Poncha tasting</li><li>Small group (max 8)</li><li>Hotel pickup included</li></ul>
+      <div class="tprice"><span class="pnum">€65</span><span class="punit">per person</span></div>
+      <button class="tbtn">Reserve Morning Tour</button>
+    </div>
+    <div class="tc aft" onclick="pickTour('Afternoon Tour')">
+      <div class="tacc"></div><div class="tbadge">🌊 Afternoon</div>
+      <h3>Coastal Discovery</h3><div class="ttime">13:30 — 18:30 · 5 hours</div>
+      <p>Explore dramatic sea cliffs, charming fishing villages, and hidden natural pools as the afternoon sun turns everything gold.</p>
+      <ul class="tfeats"><li>Cabo Girão cliffside walk</li><li>Porto Moniz natural pools</li><li>Câmara de Lobos village</li><li>Local wine &amp; bolo do caco tasting</li><li>Hotel pickup included</li></ul>
+      <div class="tprice"><span class="pnum">€65</span><span class="punit">per person</span></div>
+      <button class="tbtn">Reserve Afternoon Tour</button>
+    </div>
+    <div class="tc fud" onclick="pickTour('Full Day Tour')">
+      <div class="tacc"></div><div class="tbadge">⭐ Full Day</div>
+      <h3>Island Odyssey</h3><div class="ttime">07:30 — 19:00 · Full Day</div>
+      <p>The complete Madeira experience — mountains, forests, cliffs, villages, and sea. The island's greatest hits, all in one unforgettable day.</p>
+      <ul class="tfeats"><li>Everything in both tours above</li><li>Fanal ancient laurel forest</li><li>Santana traditional houses</li><li>Lunch at a local quinta</li><li>Small group (max 8) · Hotel pickup</li></ul>
+      <div class="tprice"><span class="pnum">€120</span><span class="punit">per person</span></div>
+      <button class="tbtn">Reserve Full Day Tour</button>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING -->
+<section class="booking" id="booking">
+  <div class="bk-wrap">
+    <div class="bk-hd"><div class="stag">Reservations</div><h2 class="stitle">Book Your <em>Experience</em></h2></div>
+    <div class="bk-lay">
+      <div>
+        <div class="cal-label">Select a Date</div>
+        <div class="cal">
+          <div class="cal-hd">
+            <button class="cal-nav" onclick="chMon(-1)">‹</button>
+            <div class="cal-mon" id="calmon"></div>
+            <button class="cal-nav" onclick="chMon(1)">›</button>
+          </div>
+          <div class="cg" id="cg"></div>
+        </div>
+        <div class="legend">
+          <div class="li"><div class="ld" style="background:var(--gold)"></div>Selected</div>
+          <div class="li"><div class="ld" style="background:var(--sage)"></div>Today</div>
+          <div class="li"><div class="ld" style="background:var(--coral)"></div>Has Booking</div>
+        </div>
+        <div class="gcal-box" style="margin-top:2rem">
+          <div class="gt">📅 Calendar Integration</div>
+          <p>Export bookings to <strong>Google Calendar, Apple Calendar or Outlook</strong> using the buttons in the Reservations table. Each booking includes time, guest info and tour details.</p>
+        </div>
+      </div>
+      <div class="fw">
+        <div class="ftitle">Your Reservation</div>
+        <div class="fg"><label class="fl">Selected Date</label><div class="fdd" id="fdd">→ Click a date on the calendar</div></div>
+        <div class="fg">
+          <label class="fl">Tour Type</label>
+          <select class="fs" id="tsel">
+            <option value="">Select a tour…</option>
+            <option value="Morning Tour">☀️ Morning Tour — Dawn Explorer (€65/pp)</option>
+            <option value="Afternoon Tour">🌊 Afternoon Tour — Coastal Discovery (€65/pp)</option>
+            <option value="Full Day Tour">⭐ Full Day Tour — Island Odyssey (€120/pp)</option>
+          </select>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">First Name</label><input type="text" class="fi" id="fn" placeholder="Ana"></div>
+          <div class="fg"><label class="fl">Last Name</label><input type="text" class="fi" id="ln" placeholder="Silva"></div>
+        </div>
+        <div class="fg"><label class="fl">Email Address</label><input type="email" class="fi" id="em" placeholder="ana@email.com"></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Phone Number</label><input type="tel" class="fi" id="ph" placeholder="+351 912 000 000"></div>
+          <div class="fg">
+            <label class="fl">Guests</label>
+            <select class="fs" id="gs">
+              <option value="1">1 person</option><option value="2">2 people</option><option value="3">3 people</option>
+              <option value="4">4 people</option><option value="5">5 people</option><option value="6">6 people</option>
+              <option value="7">7 people</option><option value="8">8 people (max)</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Special Requests</label><input type="text" class="fi" id="nt" placeholder="Dietary needs, accessibility, etc."></div>
+        <button class="fsub" id="subbtn" onclick="doBook()">Confirm Reservation →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATABASE -->
+<section class="db-sec" id="dbsec">
+  <div class="db-wrap">
+    <div class="db-top">
+      <div><div class="stag">Management</div><h2 class="stitle">Reservations <em>Database</em></h2></div>
+      <div class="db-ctrl">
+        <input class="dbs" id="dbsearch" placeholder="Search name or email…" oninput="doSearch(this.value)">
+        <button class="dbf on" onclick="setFilter(this,'all')">All</button>
+        <button class="dbf" onclick="setFilter(this,'Morning Tour')">Morning</button>
+        <button class="dbf" onclick="setFilter(this,'Afternoon Tour')">Afternoon</button>
+        <button class="dbf" onclick="setFilter(this,'Full Day Tour')">Full Day</button>
+      </div>
+    </div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Ref #</th><th>Name</th><th>Email</th><th>Tour</th><th>Date</th><th>Guests</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="9" style="text-align:center;padding:2rem;opacity:.5"><span class="spin"></span>Loading…</td></tr></tbody>
+      </table>
+      <div id="dbempty" style="display:none;text-align:center;padding:3rem;opacity:.4">No reservations found.</div>
+    </div>
+    <div style="margin-top:2rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center">
+      <button class="btn-o" style="font-size:.78rem;padding:.7rem 1.4rem;letter-spacing:.1em;text-transform:uppercase" onclick="doCSV()">⬇ Export CSV</button>
+      <button class="btn-o" style="font-size:.78rem;padding:.7rem 1.4rem;letter-spacing:.1em;text-transform:uppercase" onclick="doICS()">📅 Export .ics (All Calendars)</button>
+      <button class="btn-o" style="font-size:.78rem;padding:.7rem 1.4rem;letter-spacing:.1em;text-transform:uppercase" onclick="doGCal()">🗓 Add Next to Google Calendar</button>
+      <span id="dbcnt" style="margin-left:auto;font-size:.82rem;opacity:.5"></span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div><div class="fb">MADEIRA UNVEILED</div><div class="fi2" style="margin-top:.5rem">Funchal, Madeira, Portugal<br>contact@madeiraunveiled.pt · +351 291 000 000</div></div>
+  <div class="fi2" style="text-align:center">Small group tours · Licensed operator<br>© 2026 Madeira Unveiled. All rights reserved.</div>
+  <div class="soc"><a href="#" class="sb">ig</a><a href="#" class="sb">fb</a><a href="#" class="sb">wa</a><a href="#" class="sb">✉</a></div>
+</footer>
+
+<div class="toast" id="toast"><div class="tt" id="tt"></div><div class="tm" id="tm"></div></div>
+
+<script>
+// ════════════════════════════════════════════════
+//  ⚙️  YOUR SUPABASE CONFIG — EDIT THESE TWO LINES
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+// ════════════════════════════════════════════════
+
+const LIVE = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+let sb = null;
+if (LIVE) {
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  setDot('live','🟢 Live database');
+} else {
+  document.getElementById('cbanner').classList.add('on');
+  document.getElementById('mainnav').style.top = '48px';
+  setDot('demo','⚪ Demo mode');
+}
+
+function setDot(cls,txt){ document.getElementById('dbdot').className='db-dot '+cls; document.getElementById('dbstxt').textContent=txt; }
+
+// Demo seed data
+let local = JSON.parse(localStorage.getItem('mvbk')||'[]');
+if (!LIVE && !local.length) {
+  local = [
+    {id:'MDR-001',fn:'João',ln:'Ferreira',em:'joao@mail.pt',ph:'+351 912 111',gs:2,tour:'Morning Tour',date:'2026-03-28',nt:'Vegetarian',status:'confirmed',ca:new Date(Date.now()-86400000*3).toISOString()},
+    {id:'MDR-002',fn:'Sophie',ln:'Müller',em:'sophie@web.de',ph:'+49 176 222',gs:4,tour:'Full Day Tour',date:'2026-04-02',nt:'',status:'confirmed',ca:new Date(Date.now()-86400000*2).toISOString()},
+    {id:'MDR-003',fn:'Carlos',ln:'Santos',em:'carlos@mail.pt',ph:'+351 921 333',gs:1,tour:'Afternoon Tour',date:'2026-04-05',nt:'',status:'pending',ca:new Date(Date.now()-86400000).toISOString()},
+    {id:'MDR-004',fn:'Emma',ln:'Williams',em:'emma@gmail.com',ph:'+44 7911 444',gs:3,tour:'Morning Tour',date:'2026-04-10',nt:'Anniversary',status:'confirmed',ca:new Date().toISOString()},
+  ];
+  localStorage.setItem('mvbk',JSON.stringify(local));
+}
+
+// Normalize field names (Supabase uses fname/lname/guests/notes, local uses fn/ln/gs/nt)
+function norm(b){
+  return { id:b.id, fname:b.fname||b.fn, lname:b.lname||b.ln, email:b.email||b.em,
+    phone:b.phone||b.ph, guests:b.guests||b.gs, tour:b.tour, date:b.date,
+    notes:b.notes||b.nt||'', status:b.status, created_at:b.created_at||b.ca };
+}
+
+let ALL = [], selDate=null, cY=2026, cM=2, filt='all', sq='';
+
+async function load(){
+  if(LIVE){
+    const {data,error}=await sb.from('bookings').select('*').order('created_at',{ascending:false});
+    if(error){toast('DB Error',error.message,'e');return[];}
+    return (data||[]).map(norm);
+  }
+  return JSON.parse(localStorage.getItem('mvbk')||'[]').map(norm);
+}
+
+async function save(bk){
+  const row={id:bk.id,fname:bk.fname,lname:bk.lname,email:bk.email,phone:bk.phone,
+    guests:bk.guests,tour:bk.tour,date:bk.date,notes:bk.notes,status:bk.status};
+  if(LIVE){
+    const {error}=await sb.from('bookings').insert([row]);
+    if(error)throw error;
+  } else {
+    const arr=JSON.parse(localStorage.getItem('mvbk')||'[]');
+    arr.unshift({...row,fn:bk.fname,ln:bk.lname,em:bk.email,ph:bk.phone,gs:bk.guests,nt:bk.notes,ca:bk.created_at});
+    localStorage.setItem('mvbk',JSON.stringify(arr));
+  }
+}
+
+async function updStatus(id,st){
+  if(LIVE){const{error}=await sb.from('bookings').update({status:st}).eq('id',id);if(error){toast('Error',error.message,'e');return;}}
+  else{const a=JSON.parse(localStorage.getItem('mvbk')||'[]');const b=a.find(x=>x.id===id);if(b)b.status=st;localStorage.setItem('mvbk',JSON.stringify(a));}
+  ALL=await load();drawTable();
+}
+
+async function delBk(id){
+  if(LIVE){const{error}=await sb.from('bookings').delete().eq('id',id);if(error){toast('Error',error.message,'e');return;}}
+  else{const a=JSON.parse(localStorage.getItem('mvbk')||'[]').filter(x=>x.id!==id);localStorage.setItem('mvbk',JSON.stringify(a));}
+  ALL=await load();drawTable();drawCal();
+}
+
+// Calendar
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DN=['S','M','T','W','T','F','S'];
+
+function drawCal(){
+  document.getElementById('calmon').textContent=MN[cM]+' '+cY;
+  const g=document.getElementById('cg'); g.innerHTML='';
+  DN.forEach(d=>{const e=document.createElement('div');e.className='cdn';e.textContent=d;g.appendChild(e);});
+  const fd=new Date(cY,cM,1).getDay(), dim=new Date(cY,cM+1,0).getDate();
+  const tod=new Date(), bDates=ALL.map(b=>b.date);
+  for(let i=0;i<fd;i++){const e=document.createElement('div');e.className='cd emp';g.appendChild(e);}
+  for(let d=1;d<=dim;d++){
+    const e=document.createElement('div');e.className='cd';
+    const ds=`${cY}-${String(cM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const past=new Date(cY,cM,d)<new Date(tod.getFullYear(),tod.getMonth(),tod.getDate());
+    const today=d===tod.getDate()&&cM===tod.getMonth()&&cY===tod.getFullYear();
+    e.textContent=d;
+    if(past)e.classList.add('past');else if(today)e.classList.add('today');
+    if(bDates.includes(ds)){const dot=document.createElement('div');dot.className='dot';e.appendChild(dot);}
+    if(selDate===ds)e.classList.add('sel');
+    if(!past)e.onclick=()=>pickDate(ds,e);
+    g.appendChild(e);
+  }
+}
+
+function pickDate(ds,el){
+  selDate=ds;
+  document.querySelectorAll('.cd').forEach(d=>d.classList.remove('sel'));
+  el.classList.add('sel');
+  const[y,m,d]=ds.split('-');
+  document.getElementById('fdd').textContent=new Date(y,m-1,d).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+function chMon(dir){
+  cM+=dir;if(cM<0){cM=11;cY--;}if(cM>11){cM=0;cY++;}drawCal();
+}
+
+function pickTour(t){document.getElementById('tsel').value=t;document.getElementById('booking').scrollIntoView({behavior:'smooth'});}
+
+// Submit
+function gid(){return'MDR-'+String(Math.floor(Math.random()*90000)+10000)}
+function price(t){return t==='Full Day Tour'?120:65}
+
+async function doBook(){
+  const tour=document.getElementById('tsel').value;
+  const fname=document.getElementById('fn').value.trim();
+  const lname=document.getElementById('ln').value.trim();
+  const email=document.getElementById('em').value.trim();
+  const phone=document.getElementById('ph').value.trim();
+  const guests=parseInt(document.getElementById('gs').value);
+  const notes=document.getElementById('nt').value.trim();
+  if(!selDate){toast('Missing Date','Please select a date.','e');return;}
+  if(!tour){toast('Missing Tour','Please select a tour type.','e');return;}
+  if(!fname||!lname){toast('Missing Name','Please enter your full name.','e');return;}
+  if(!email||!email.includes('@')){toast('Invalid Email','Please enter a valid email.','e');return;}
+  const btn=document.getElementById('subbtn');
+  btn.disabled=true;btn.textContent='Saving…';
+  const bk={id:gid(),fname,lname,email,phone,guests,tour,date:selDate,notes,status:'confirmed',created_at:new Date().toISOString()};
+  try{
+    await save(bk);ALL=await load();drawTable();drawCal();
+    toast('🎉 Confirmed!',`${tour} on ${fmtDate(selDate)} for ${guests} guest${guests>1?'s':''}.`);
+    ['fn','ln','em','ph','nt'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('tsel').value='';document.getElementById('gs').value='1';
+    document.getElementById('fdd').textContent='→ Click a date on the calendar';selDate=null;
+  }catch(e){toast('Error',e.message||'Could not save.','e');}
+  btn.disabled=false;btn.textContent='Confirm Reservation →';
+}
+
+// Table
+function fmtDate(d){const[y,m,day]=d.split('-');return new Date(y,m-1,day).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+const sts=['confirmed','pending','cancelled'];
+
+function drawTable(){
+  const tb=document.getElementById('tbody'),em=document.getElementById('dbempty');
+  let filt2=ALL.filter(b=>{
+    const mt=filt==='all'||b.tour===filt;
+    const ms=!sq||`${b.fname} ${b.lname} ${b.email}`.toLowerCase().includes(sq);
+    return mt&&ms;
+  });
+  document.getElementById('dbcnt').textContent=`${filt2.length} booking${filt2.length!==1?'s':''}`;
+  if(!filt2.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  const tc=t=>t==='Morning Tour'?'bm':t==='Afternoon Tour'?'ba':'bf';
+  const sc=s=>s==='confirmed'?'bc':s==='pending'?'bp':'bx';
+  tb.innerHTML=filt2.map(b=>`
+    <tr>
+      <td style="opacity:.5;font-size:.8rem">${b.id}</td>
+      <td><strong>${b.fname} ${b.lname}</strong></td>
+      <td style="opacity:.7;font-size:.83rem">${b.email}</td>
+      <td><span class="badge ${tc(b.tour)}">${b.tour}</span></td>
+      <td>${fmtDate(b.date)}</td>
+      <td style="text-align:center">${b.guests}</td>
+      <td style="color:var(--gold)">€${price(b.tour)*b.guests}</td>
+      <td><span class="badge ${sc(b.status)}">${b.status}</span></td>
+      <td><div style="display:flex;gap:.4rem">
+        <button onclick="updStatus('${b.id}','${sts[(sts.indexOf(b.status)+1)%3]}')" style="background:none;border:1px solid rgba(255,255,255,.15);color:var(--cream);padding:.25rem .55rem;font-size:.7rem;cursor:pointer;font-family:inherit;transition:all .2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(255,255,255,.15)'">Status</button>
+        <button onclick="if(confirm('Delete?'))delBk('${b.id}')" style="background:none;border:1px solid rgba(224,123,84,.3);color:var(--coral);padding:.25rem .55rem;font-size:.7rem;cursor:pointer;font-family:inherit;transition:all .2s" onmouseover="this.style.background='rgba(224,123,84,.15)'" onmouseout="this.style.background='none'">Del</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+function setFilter(el,t){filt=t;document.querySelectorAll('.dbf').forEach(b=>b.classList.remove('on'));el.classList.add('on');drawTable();}
+function doSearch(q){sq=q.toLowerCase();drawTable();}
+
+// Exports
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();}
+
+function doCSV(){
+  const h=['ID','First Name','Last Name','Email','Phone','Tour','Date','Guests','Total','Status','Notes'];
+  const rows=ALL.map(b=>[b.id,b.fname,b.lname,b.email,b.phone||'',b.tour,b.date,b.guests,price(b.tour)*b.guests,b.status,b.notes||'']);
+  const csv=[h,...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  dl(new Blob([csv],{type:'text/csv'}),'madeira-bookings.csv');
+}
+
+function doICS(){
+  const ls=['BEGIN:VCALENDAR','VERSION:2.0','CALSCALE:GREGORIAN','PRODID:-//Madeira Unveiled//EN','X-WR-CALNAME:Madeira Unveiled Bookings','X-WR-TIMEZONE:Atlantic/Madeira'];
+  ALL.filter(b=>b.status!=='cancelled').forEach(b=>{
+    const[y,m,d]=b.date.split('-'),ds=`${y}${m}${String(d).padStart(2,'0')}`;
+    const sh=b.tour==='Afternoon Tour'?'T133000':'T073000';
+    const eh=b.tour==='Afternoon Tour'?'T183000':b.tour==='Full Day Tour'?'T190000':'T123000';
+    ls.push('BEGIN:VEVENT',`DTSTART;TZID=Atlantic/Madeira:${ds}${sh}`,`DTEND;TZID=Atlantic/Madeira:${ds}${eh}`,
+      `SUMMARY:${b.tour} — ${b.fname} ${b.lname} (${b.guests}pax)`,
+      `DESCRIPTION:Ref: ${b.id}\\nGuests: ${b.guests}\\nEmail: ${b.email}\\nPhone: ${b.phone||'-'}\\nNotes: ${b.notes||'-'}`,
+      `LOCATION:Funchal\\, Madeira\\, Portugal`,`STATUS:${b.status==='confirmed'?'CONFIRMED':'TENTATIVE'}`,
+      `UID:${b.id}@madeiraunveiled.pt`,'END:VEVENT');
+  });
+  ls.push('END:VCALENDAR');
+  dl(new Blob([ls.join('\r\n')],{type:'text/calendar'}),'madeira-bookings.ics');
+  toast('📅 Calendar Export','Open the .ics file to import all bookings into Google, Apple or Outlook Calendar.');
+}
+
+function doGCal(){
+  const up=ALL.filter(b=>b.status!=='cancelled'&&b.date>=new Date().toISOString().slice(0,10)).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!up.length){toast('No upcoming bookings','Nothing to add to calendar.','e');return;}
+  const b=up[0],[y,m,d]=b.date.split('-'),ds=`${y}${m}${String(d).padStart(2,'0')}`;
+  const sh=b.tour==='Afternoon Tour'?'133000':b.tour==='Full Day Tour'?'073000':'073000';
+  const eh=b.tour==='Afternoon Tour'?'183000':b.tour==='Full Day Tour'?'190000':'123000';
+  const url=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(b.tour+' — '+b.fname+' '+b.lname)}&dates=${ds}T${sh}/${ds}T${eh}&details=${encodeURIComponent('Ref: '+b.id+'\nGuests: '+b.guests+'\nEmail: '+b.email)}&location=${encodeURIComponent('Funchal, Madeira, Portugal')}`;
+  window.open(url,'_blank');
+}
+
+// Toast
+function toast(t,m,type){
+  const el=document.getElementById('toast');
+  document.getElementById('tt').textContent=t;document.getElementById('tm').textContent=m;
+  el.style.background=type==='e'?'#7f2d1e':'var(--emerald)';
+  el.style.borderLeftColor=type==='e'?'var(--coral)':'var(--sage)';
+  el.classList.add('on');setTimeout(()=>el.classList.remove('on'),4500);
+}
+
+// Init
+(async()=>{
+  ALL=await load();drawCal();drawTable();
+  if(LIVE&&sb){
+    sb.channel('bk').on('postgres_changes',{event:'*',schema:'public',table:'bookings'},async()=>{
+      ALL=await load();drawTable();drawCal();
+    }).subscribe();
+  }
+})();
+</script>
+</body>
+</html>
