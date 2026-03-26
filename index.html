@@ -6,7 +6,7 @@
 <title>Madeira Unveiled — Island Tours</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 <style>
   :root {
     --ocean:#0a2a3d;--deep:#061820;--emerald:#2d6a4f;
@@ -397,7 +397,7 @@ const SUPABASE_URL = 'https://dxwafdjsnfdiayeylgmk.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_dXn4_OsMGoD_5JK-DqWX7w_J9Wq4u9X';
 // ════════════════════════════════════════════════
 
-const LIVE = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+const LIVE = SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_URL.includes('supabase.co');
 let sb = null;
 if (LIVE) {
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
